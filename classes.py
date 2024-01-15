@@ -1,5 +1,6 @@
 import sqlite3
 import requests
+from datetime import datetime
 class User:
     def __init__(self, username, name, email, password, user_type, logged_in):
         self.username = username
@@ -181,7 +182,7 @@ class Clinic:
             
           
     @staticmethod
-    def UpdateClinicInfo(username):
+    def UpdateClinicInfo(username,):
         with sqlite3.connect("Clinic Database.sql") as Clinic_database:
             cursor = Clinic_database.cursor()
             cursor.execute('''SELECT * FROM Users WHERE username = ?''', (username,))
@@ -208,3 +209,116 @@ class Clinic:
             else:
                 print("invalid username or password")
                 return False
+            
+            
+            
+            
+            
+class Appoinment(Clinic, User): #inherit from User and Clinic 
+    def __init__(self, Appoinment_id, clinic_id, User_id, DateTime, Status):
+        super().__init__(clinic_id, User_id)  
+        self.Appoinment_id = Appoinment_id
+        self.DateTime = DateTime
+        self.Status = Status
+    @classmethod
+    def make_appoinment(cls, username):
+        with sqlite3.connect("Clinic Database.sql") as Clinic_database:
+            cursor = Clinic_database.cursor()
+            cursor.execute('''CREATE TABLE IF NOT EXISTS Appointments (
+                            AppointmentID INTEGER PRIMARY KEY AUTOINCREMENT,
+                            ClinicID INTEGER,
+                            UserID INTEGER ,
+                            DateTime DATETIME,
+                            Status VARCHAR(255),
+                            FOREIGN KEY (ClinicID) REFERENCES Clinics(Clinic_id),
+                            FOREIGN KEY (UserID) REFERENCES Users(User_id))
+                        ''')
+            cursor.execute('''SELECT * FROM Users WHERE username = ? ''', (username,))
+            existing_user = cursor.fetchone()
+            if existing_user is not None:
+                if existing_user[5] == 'c':
+                    print("you don,t have access to this part")
+                    return True
+                else:
+                    cursor.execute('''SELECT User_id FROM Users WHERE username = ?''', (username,))
+                    user_id_tuple = cursor.fetchone()
+                    User_id = user_id_tuple[0]
+                    Clinic_id = input("Enter your intended clinic id: ")
+                    date_time_str = input("Enter date and time (YYYY-MM-DD HH:MM): ")
+                    try:
+                        DateTime = datetime.strptime(date_time_str, "%Y-%m-%d %H:%M")
+                        if Appoinment.check_clinic_capacity(Clinic_id) == True:
+                            cursor.execute('''INSERT INTO Appointments (ClinicID, UserID, DateTime, Status)
+                                               VALUES (?, ?, ?, ?)''', (Clinic_id, User_id, DateTime, "Scheduled"))
+                            cursor.execute('''UPDATE Clinics SET Capacity = Capacity - 1 WHERE Clinic_id = ?''', (Clinic_id,))
+                        Clinic_database.commit()
+                        
+                        print("Appoinment scheduled successfully")
+                        return True
+                    except ValueError:
+                        print("invalid date and time")
+                        
+            else:
+                print("invalid username or password")
+                return False
+            
+            
+            
+    @classmethod
+    def cancell_appoinment(cls, username):
+        with sqlite3.connect("Clinic Database.sql") as Clinic_database:
+            cursor = Clinic_database.cursor()
+            cursor.execute('''SELECT * FROM Users WHERE username = ?''', (username,))
+            existing_user = cursor.fetchone()
+            if existing_user is not None:
+                if existing_user[6] == 0:
+                    print("please login first")
+                    return True
+                if existing_user[5] != 'p':
+                    print("You can,t cancell the appoinment ")
+                    return True
+                else:
+                    cursor.execute('''SELECT User_id FROM Users WHERE username = ?''', (username,))
+                    user_id_tuple = cursor.fetchone()
+                    
+                    if user_id_tuple is not None:
+                        user_id = user_id_tuple[0]
+                        cursor.execute('''UPDATE Appointments SET Status = ? WHERE UserID = ?''', ("cancelled", user_id))
+                        Clinic_database.commit()
+                        cursor.execute('''SELECT ClinicID FROM Appointments WHERE UserID = ?''', (user_id,))
+                        clinic_id_tuple = cursor.fetchone()
+                        if clinic_id_tuple is not None:
+                            cursor.execute('''UPDATE Clinics SET Capacity = Capacity + 1 WHERE Clinic_id = ?''',(clinic_id_tuple[0],))
+                            Clinic_database.commit()
+                            print("appoinment have cancelled successfully")
+                            return True
+                        else:
+                            return False
+                    else:
+                        return False
+            
+
+       
+    @classmethod
+    def reschedule_appoinment(cls, username):
+        with sqlite3.connect("Clinic Database.sql") as Clinic_database:
+            cursor = Clinic_database.cursor()
+            cursor.execute('''SELECT * FROM Users WHERE username = ?''', (username,))
+            existing_user = cursor.fetchone()
+            if existing_user is not None:
+                if existing_user[6] == 0:
+                    print("please login first")
+                    return True
+                if existing_user[5] != 'p':
+                    print("You can,t change the appointment ")
+                    return True
+                else:
+                    AppoinmentID = input("Enter your Appointment ID that you want change: ") 
+                    new_time_str = input("Enter New time you want your appointment (YYYY-MM-DD HH:MM):   ")
+                    cursor.execute('''SELECT * FROM Appointments WHERE AppointmentID = ?''', (AppoinmentID,))
+                    new_datetime = datetime.strptime(new_time_str,"%Y-%m-%d %H:%M")
+                    cursor.execute('''UPDATE Appointments SET DateTime = ?''', (new_datetime,))
+                    Clinic_database.commit()
+                    return True
+            else:
+                return False                 
