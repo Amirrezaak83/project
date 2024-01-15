@@ -150,16 +150,12 @@ class Clinic:
                             )
                         ''')
                 for clinic_id, capacity in id_and_cap.items():
-                # Check if Clinic_id already exists
+                    
                     cursor.execute("SELECT * FROM Clinics WHERE Clinic_id = ?", (clinic_id,))
                     existing_clinic = cursor.fetchone()
 
-                if existing_clinic is not None:
-                    # Update existing record instead of inserting
-                    cursor.execute('''UPDATE Clinics SET capacity = ? WHERE Clinic_id = ?''', (capacity, clinic_id))
-                else:
-                    # Insert new record
-                    cursor.execute('''INSERT INTO Clinics (Clinic_id, capacity) VALUES(?, ?)''', (clinic_id, capacity))
+                    if existing_clinic is None:
+                        cursor.execute('''INSERT INTO Clinics (Clinic_id, capacity) VALUES(?, ?)''', (clinic_id, capacity))
 
                 cursor.execute('''UPDATE Clinics SET name = ?, address = ?, phone_number = ?, services = ?, availability = ? WHERE Clinic_id = ?''',
                                ('Yas', 'Tehran, Ekbatan', '09122121021', 'Dental clinic', 1, 1))
@@ -170,7 +166,7 @@ class Clinic:
                 cursor.execute('''UPDATE Clinics SET name = ?, address = ?, phone_number = ?, services = ?, availability = ? WHERE Clinic_id = ?''',
                                ('Samarghand', 'Saadatabad', '09122064051', 'nouro clinic', 1, 4))
                 cursor.execute('''UPDATE Clinics SET name = ?, address = ?, phone_number = ?, services = ?, availability = ? WHERE Clinic_id = ?''',
-                               ('Shafa', 'Eslamshahr', '09128964951', 'orthopedia clinic', 0, 5))
+                                ('Shafa', 'Eslamshahr', '09128964951', 'orthopedia clinic', 0, 5))
                 cursor.execute('''UPDATE Clinics SET name = ?, address = ?, phone_number = ?, services = ?, availability = ? WHERE Clinic_id = ?''',
                                ('Noor', 'Motehari street', '09216489632', 'Eye clinic', 1, 6))
                 cursor.execute('''UPDATE Clinics SET name = ?, address = ?, phone_number = ?, services = ?, availability = ? WHERE Clinic_id = ?''',
@@ -179,10 +175,8 @@ class Clinic:
         else:
             print(f"Failed to fetch data: HTTP {response.status_code}")
           
-            
-          
     @staticmethod
-    def UpdateClinicInfo(username,):
+    def UpdateClinicInfo(username):
         with sqlite3.connect("Clinic Database.sql") as Clinic_database:
             cursor = Clinic_database.cursor()
             cursor.execute('''SELECT * FROM Users WHERE username = ?''', (username,))
@@ -220,6 +214,7 @@ class Appoinment(Clinic, User): #inherit from User and Clinic
         self.Appoinment_id = Appoinment_id
         self.DateTime = DateTime
         self.Status = Status
+        
     @classmethod
     def make_appoinment(cls, username):
         with sqlite3.connect("Clinic Database.sql") as Clinic_database:
@@ -321,4 +316,25 @@ class Appoinment(Clinic, User): #inherit from User and Clinic
                     Clinic_database.commit()
                     return True
             else:
-                return False                 
+                return False           
+            
+            
+            
+def show_clinics():
+    # Connect to the database
+    with sqlite3.connect("Clinic Database.sql") as clinic_database:
+        # Create a cursor
+        cursor = clinic_database.cursor()
+
+        # Execute SELECT query to fetch data from the Users table
+        cursor.execute("SELECT * FROM Clinics")
+
+        # Fetch all rows from the result set
+        clinics = cursor.fetchall()
+
+        # Print or process the retrieved data
+        for clinic in clinics:
+            print(clinic)
+show_clinics()
+
+
