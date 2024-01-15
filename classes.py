@@ -1,4 +1,5 @@
 import sqlite3
+import requests
 class User:
     def __init__(self, username, name, email, password, user_type, logged_in):
         self.username = username
@@ -116,3 +117,94 @@ class User:
                 print("No appointments found for this user.")
                 
             return result  
+
+
+
+
+class Clinic:
+    def __init__(self, clinic_id, name, address, phone_number, services, capacity, availablity):
+        self.clinic_id = clinic_id
+        self.name = name
+        self.address = address
+        self.phone_number = phone_number
+        self.services = services
+        self.capacity = capacity
+        self.availablity = availablity
+
+    @classmethod
+    def AddClinic(cls):
+        response = requests.get('http://127.0.0.1:5000/slots')
+        if response.status_code == 200:
+            id_and_cap = response.json()  # converted response to json
+            with sqlite3.connect("Clinic Database.sql") as Clinic_database:
+                cursor = Clinic_database.cursor()
+                cursor.execute('''CREATE TABLE IF NOT EXISTS Clinics (
+                            Clinic_id INTEGER PRIMARY KEY,
+                            name TEXT NULLABLE,
+                            address TEXT NULLABLE,
+                            phone_number TEXT NULLABLE,
+                            services TEXT NULLABLE,
+                            capacity INTEGER,
+                            availability BOOLEAN NULLABLE
+                            )
+                        ''')
+                for clinic_id, capacity in id_and_cap.items():
+                # Check if Clinic_id already exists
+                    cursor.execute("SELECT * FROM Clinics WHERE Clinic_id = ?", (clinic_id,))
+                    existing_clinic = cursor.fetchone()
+
+                if existing_clinic is not None:
+                    # Update existing record instead of inserting
+                    cursor.execute('''UPDATE Clinics SET capacity = ? WHERE Clinic_id = ?''', (capacity, clinic_id))
+                else:
+                    # Insert new record
+                    cursor.execute('''INSERT INTO Clinics (Clinic_id, capacity) VALUES(?, ?)''', (clinic_id, capacity))
+
+                cursor.execute('''UPDATE Clinics SET name = ?, address = ?, phone_number = ?, services = ?, availability = ? WHERE Clinic_id = ?''',
+                               ('Yas', 'Tehran, Ekbatan', '09122121021', 'Dental clinic', 1, 1))
+                cursor.execute('''UPDATE Clinics SET name = ?, address = ?, phone_number = ?, services = ?, availability = ? WHERE Clinic_id = ?''',
+                               ('Arya', 'shahrak gharb', '09230991250', 'Eye clinic', 1, 2))
+                cursor.execute('''UPDATE Clinics SET name = ?, address = ?, phone_number = ?, services = ?, availability = ? WHERE Clinic_id = ?''',
+                               ('Afra', 'Tajrish', '09230991163', 'Heart clinic', 0, 3))
+                cursor.execute('''UPDATE Clinics SET name = ?, address = ?, phone_number = ?, services = ?, availability = ? WHERE Clinic_id = ?''',
+                               ('Samarghand', 'Saadatabad', '09122064051', 'nouro clinic', 1, 4))
+                cursor.execute('''UPDATE Clinics SET name = ?, address = ?, phone_number = ?, services = ?, availability = ? WHERE Clinic_id = ?''',
+                               ('Shafa', 'Eslamshahr', '09128964951', 'orthopedia clinic', 0, 5))
+                cursor.execute('''UPDATE Clinics SET name = ?, address = ?, phone_number = ?, services = ?, availability = ? WHERE Clinic_id = ?''',
+                               ('Noor', 'Motehari street', '09216489632', 'Eye clinic', 1, 6))
+                cursor.execute('''UPDATE Clinics SET name = ?, address = ?, phone_number = ?, services = ?, availability = ? WHERE Clinic_id = ?''',
+                               ('Farda', 'Argentina square', '09337369788', 'Heart clinic', 0, 7))
+                
+        else:
+            print(f"Failed to fetch data: HTTP {response.status_code}")
+          
+            
+          
+    @staticmethod
+    def UpdateClinicInfo(username):
+        with sqlite3.connect("Clinic Database.sql") as Clinic_database:
+            cursor = Clinic_database.cursor()
+            cursor.execute('''SELECT * FROM Users WHERE username = ?''', (username,))
+            existing_user = cursor.fetchone()
+            if existing_user is not None:
+                if existing_user[6] == 0:
+                    print("Please login first")
+                    return True
+                else:
+                    if existing_user[5] == 'p':
+                        print("you don,t have access to this part")
+                        return True
+                    else:
+                        new_clinic_name = input("Enter new clinic name: ")
+                        new_address = input("Entern new address: ")
+                        new_phone_number = input('Enter new phone number: ')
+                        new_services = input("Enter all of your services that you have now: ")
+                        cursor.execute('''UPDATE Clinics SET name = ?, address = ?, phone number = ?, services = ? 
+                                       WHERE Clinics.User_id = (SELECT Users.User_id FROM Users WHERE Users.username = ?)
+                                       ''', (new_clinic_name, new_address, new_phone_number, new_services, username))
+                        Clinic_database.commit()
+                        print("Update Clinic info successfully")
+                        return True
+            else:
+                print("invalid username or password")
+                return False
