@@ -347,5 +347,52 @@ class Notifications:
                                   VALUES (?, ?, ?)''', (user_id, message, self.date))
                                   
         print(message)
-        
-   
+
+
+class insurance:
+    def __init__(self, insurance_id, company_name, services, phone_number):
+        self.insurance_id = insurance_id
+        self.company_name = company_name
+        self.services = services
+        self.phone_number = phone_number
+
+    @classmethod
+    def add_insurance(cls):
+        with sqlite3.connect("Clinic Database.sql") as Clinic_database:
+            cursor = Clinic_database.cursor()
+            cursor.execute('''CREATE TABLE IF NOT EXISTS Insurances (
+                            InsuranceID INTEGER PRIMARY KEY AUTOINCREMENT,
+                            CompanyName TEXT,
+                            services TEXT,
+                            PhoneNumber TEXT)
+                           ''')
+            cursor.execute('''INSERT INTO Insurances (CompanyName, services, PhoneNumber)
+                                 VALUES (?, ?, ?)''', ("Iran Insurance", "Health Insurance", "02146149289"))
+
+            cursor.execute('''INSERT INTO Insurances (CompanyName, services, PhoneNumber)
+                                 VALUES (?, ?, ?)''', ("Mehr Insurance", "Dental Insurance", "02166358976"))
+            cursor.execute('''INSERT INTO Insurances (CompanyName, services, PhoneNumber)
+                                VALUES (?, ?, ?)''', ("Mellat Insurance", "Health Insurance", "09128765467"))
+            cursor.execute('''INSERT INTO Insurances (CompanyName, services, PhoneNumber)
+                                 VALUES (?, ?, ?)''', ("Farda Insurance", "Dental Insurance", "02178763789"))
+            cursor.execute('''INSERT INTO Insurances (CompanyName, services, PhoneNumber)
+                                 VALUES (?, ?, ?)''', ("Amirreza Insurance", "Supplementary Insurnace", "09031736415"))
+
+            Clinic_database.commit()
+            print("insurances inserted successfully")
+
+    @classmethod
+    def view_insurances(cls):
+        with sqlite3.connect("Clinic Database.sql") as Clinic_database:
+            cursor = Clinic_database.cursor()
+            cursor.execute('''SELECT * FROM Insurances''')
+            insurances = cursor.fetchall()
+        if insurances:
+            for insurance in insurances:
+                print("Insurance ID:", insurance[0])
+                print("Company Name:", insurance[1])
+                print("Services:", insurance[2])
+                print("Phone Number:", insurance[3])
+        else:
+            print("No insurances found in the database.")
+
