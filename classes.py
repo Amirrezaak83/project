@@ -259,8 +259,8 @@ class Appoinment(Clinic, User): #inherit from User and Clinic
             
             
             
-    @classmethod
-    def cancell_appoinment(cls, username):
+    @staticmethod
+    def cancell_appoinment(username):
         with sqlite3.connect("Clinic Database.sql") as Clinic_database:
             cursor = Clinic_database.cursor()
             cursor.execute('''SELECT * FROM Users WHERE username = ?''', (username,))
@@ -294,8 +294,8 @@ class Appoinment(Clinic, User): #inherit from User and Clinic
             
 
        
-    @classmethod
-    def reschedule_appoinment(cls, username):
+    @staticmethod
+    def reschedule_appoinment(username):
         with sqlite3.connect("Clinic Database.sql") as Clinic_database:
             cursor = Clinic_database.cursor()
             cursor.execute('''SELECT * FROM Users WHERE username = ?''', (username,))
@@ -319,22 +319,5 @@ class Appoinment(Clinic, User): #inherit from User and Clinic
                 return False           
             
             
-            
-def show_clinics():
-    # Connect to the database
-    with sqlite3.connect("Clinic Database.sql") as clinic_database:
-        # Create a cursor
-        cursor = clinic_database.cursor()
-
-        # Execute SELECT query to fetch data from the Users table
-        cursor.execute("SELECT * FROM Clinics")
-
-        # Fetch all rows from the result set
-        clinics = cursor.fetchall()
-
-        # Print or process the retrieved data
-        for clinic in clinics:
-            print(clinic)
-show_clinics()
 
 
