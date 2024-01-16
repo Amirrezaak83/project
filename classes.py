@@ -319,5 +319,33 @@ class Appoinment(Clinic, User): #inherit from User and Clinic
                 return False           
             
             
-
-
+class Notifications:
+    def __init__(self,user_id, message):
+        self.user_id = user_id
+        self.message = message
+        self.date = datetime.now()
+        
+    
+    def send(self, username):
+        Message_With_Time = f"{self.message}, {self.date}"
+        ID_with_message = f"NotificationID: {self.NotificationID},  7{Message_With_Time}"
+        message = f"User ID: {self.user_id},  {ID_with_message}"
+        with sqlite3.connect("Clinic Database.sql") as Clinic_database:
+            cursor = Clinic_database.cursor()
+            cursor.execute('''SELECT User_id FROM Users WHERE username = ?''', (username,))
+            user_id_tuple = cursor.fetchone()
+            if user_id_tuple is not None:
+                user_id = user_id_tuple[0]
+                cursor.execute('''CREATE TABLE IF NOT EXISTS Notifications (
+                                NotificationsID INTEGER PRIMARY KEY AUTOINCREMENT,
+                                user_id INTEGER ,
+                                message TEXT,
+                                date DATETIME,
+                                FOREIGN KEY (user_id) REFERENCES Users(User_id))
+                            ''')
+                cursor.execute('''INSERT INTO Notifications (user_id, message, date)
+                                  VALUES (?, ?, ?)''', (user_id, message, self.date))
+                                  
+        print(message)
+        
+   
