@@ -396,3 +396,41 @@ class insurance:
         else:
             print("No insurances found in the database.")
 
+
+class UserInsurance(insurance, User):
+    def __init__(self, user_id, insurance_id):
+        super().__init__(insurance_id, user_id)
+        self.user_id = user_id
+        self.insurance_id = insurance_id
+
+    @classmethod
+    def add_user_insurance(cls, username, insurance_name):
+        with sqlite3.connect("Clinic Database.sql") as Clinic_database:
+            cursor = Clinic_database.cursor()
+            cursor.execute('''CREATE TABLE IF NOT EXISTS UserInsurance (
+                               UserInsuranceID INTEGER PRIMARY KEY AUTOINCREMENT,
+                               UserID INTEGER,
+                               InsuranceID INTEGER,
+                               FOREIGN KEY (UserID) REFERENCES Users(User_id),
+                               FOREIGN KEY (InsuranceID) REFERENCES Insurances(InsuranceID))
+                           ''')
+            cursor.execute("SELECT User_id FROM Users WHERE username = ?", (username,))
+            user_id = cursor.fetchone()[0]
+            cursor.execute('''SELECT InsuranceID FROM Insurances WHERE CompanyName = ?''', (insurance_name,))
+            insurance_id = cursor.fetchone()[0]
+
+            # Check if the user already has this insurance
+            cursor.execute("SELECT * FROM UserInsurance WHERE UserID = ? AND InsuranceID = ?", (user_id, insurance_id))
+            existing_user_insurance = cursor.fetchone()
+
+            if existing_user_insurance is not None:
+                print("User already has this insurance.")
+                return False
+            else:
+                cursor.execute('''INSERT INTO UserInsurance (UserID, InsuranceID)
+                                     VALUES (?, ?)''', (user_id, insurance_id))
+                Clinic_database.commit()
+                print("User insurance added successfully.")
+                return True
+
+
