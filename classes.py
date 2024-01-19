@@ -528,4 +528,28 @@ if __name__ == "__main__":
     main()
 
 
+def search_clinic(keyword):
+    with sqlite3.connect("Clinic Database.sql") as conn:
+        cursor = conn.cursor()
+        query = "SELECT * FROM Clinics WHERE name LIKE ? OR services LIKE ?"
+        cursor.execute(query, ('%' + keyword + '%', '%' + keyword + '%'))
+        results = cursor.fetchall()
+    return results
+
+
+def get_available_slots():
+    response = requests.get('http://127.0.0.1:5000/slots')
+    if response.status_code == 200:
+        return response.json()
+    else:
+        return f"Error fetching available slots: {response.status_code}"
+
+
+def update_clinic_info(clinic_id, new_name, new_address, new_phone_number, new_services):
+    with sqlite3.connect("Clinic Database.sql") as conn:
+        cursor = conn.cursor()
+        query = "UPDATE Clinics SET name = ?, address = ?, phone_number = ?, services = ? WHERE Clinic_id = ?"
+        cursor.execute(query, (new_name, new_address, new_phone_number, new_services, clinic_id))
+        conn.commit()
+    return "Clinic information updated successfully"
 
