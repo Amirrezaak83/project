@@ -1,6 +1,9 @@
 import sqlite3
 import requests
 from datetime import datetime
+import random
+import string
+
 class User:
     def __init__(self, username, name, email, password, user_type, logged_in):
         self.username = username
@@ -433,4 +436,120 @@ class UserInsurance(insurance, User):
                 print("User insurance added successfully.")
                 return True
 
+
+
+def main():
+    while True:
+        print("1. register account")
+        print("2. login account")
+        print("3. exit program")
+        select_options = input("Select option: ")
+
+        if select_options == '1':
+            User.register_account()
+        elif select_options == '2':
+            user_logged_in = False
+            username = input("Enter your username: ")
+            if user_login():
+                user_logged_in = True
+                user_menu(username)
+            else:
+                print("Login failed or cancelled. Returning to main menu.")
+
+        elif select_options == '3':
+            print("Exiting program.")
+            break
+        else:
+            print("Invalid option selected.")
+
+
+
+def user_login():
+    print("1. login with your username and password")
+    print("2. login with one time password")
+    login_method = input("Select an option from above: ")
+
+
+    if login_method == '1':
+        username = input("Enter your username: ")
+        password = input("Enter your password: ")
+        if User.login(username, password):
+            with sqlite3.connect("Clinic Database.sql") as Clinic_database:
+                cursor = Clinic_database.cursor()
+                cursor.execute("SELECT * FROM Users WHERE username = ? AND password = ?", (username, password))
+                existing_user = cursor.fetchone()
+                if existing_user:
+                    return True
+        return False
+    elif login_method == '2':
+        username = input("Enter your username: ")
+        characters = string.ascii_uppercase + string.ascii_letters + string.digits + string.ascii_lowercase
+        generated_password = "".join(random.choices(characters, k=8))
+        print("Your one-time password is:", generated_password)
+        otp = input("Enter the one-time password: ")
+        if otp == generated_password:
+            User.login_with_generated_password(username)
+            with sqlite3.connect('''Clinic Database.sql''') as Clinic_database:
+                cursor = Clinic_database.cursor()
+                cursor.execute('''SELECT * From Users WHERE username = ?''',(username,))
+                existing_user = cursor.fetchone()
+                return True
+        return False
+    
+    else:
+        print("Invalid login method.")
+        return False
+
+
+def user_menu(username):
+    while True:
+        print("1. make appointment")
+        print("2. cancel appointment")
+        print("3. view appointment")
+        print("4. update information")
+        print("5. logout and return to main menu")
+        patient_options = input("Select your option: ")
+
+        if patient_options == '1':
+            Appoinment.make_appoinment(username)
+        elif patient_options == '2':
+            Appoinment.cancel_appoinment(username)
+        elif patient_options == '3':
+            User.view_appoinment(username)
+        elif patient_options == '4':
+            User.update_profile(username)
+        elif patient_options == '5':
+            print("Logging out...")
+            break
+        else:
+            print("Invalid option selected.")
+
+if __name__ == "__main__":
+    main()
+
+
+def search_clinic(keyword):
+    with sqlite3.connect("Clinic Database.sql") as conn:
+        cursor = conn.cursor()
+        query = "SELECT * FROM Clinics WHERE name LIKE ? OR services LIKE ?"
+        cursor.execute(query, ('%' + keyword + '%', '%' + keyword + '%'))
+        results = cursor.fetchall()
+    return results
+
+
+def get_available_slots():
+    response = requests.get('http://127.0.0.1:5000/slots')
+    if response.status_code == 200:
+        return response.json()
+    else:
+        return f"Error fetching available slots: {response.status_code}"
+
+
+def update_clinic_info(clinic_id, new_name, new_address, new_phone_number, new_services):
+    with sqlite3.connect("Clinic Database.sql") as conn:
+        cursor = conn.cursor()
+        query = "UPDATE Clinics SET name = ?, address = ?, phone_number = ?, services = ? WHERE Clinic_id = ?"
+        cursor.execute(query, (new_name, new_address, new_phone_number, new_services, clinic_id))
+        conn.commit()
+    return "Clinic information updated successfully"
 
